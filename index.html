@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule Monitor</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .cards { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .card { border: 1px solid #8884; border-radius: 8px; padding: 1rem; flex: 1; min-width: 160px; }
+  .card b { display: block; font-size: 1.4rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: .5rem; border-bottom: 1px solid #8884; }
+  .schedule { color: #1a7f37; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Schedule Monitor</h1>
+<div class="cards">
+  <div class="card">Cron (UTC)<b id="cron">…</b></div>
+  <div class="card">Total runs<b id="total">…</b></div>
+  <div class="card">Scheduler-triggered<b id="sched">…</b></div>
+  <div class="card">Last run (IST)<b id="last">…</b></div>
+</div>
+<table>
+  <thead><tr><th>Time (IST)</th><th>Trigger</th><th>Proof</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<script>
+(async () => {
+  const cfg = await fetch("config.json?t=" + Date.now()).then(r => r.json());
+  const runs = await fetch("logs/runs.json?t=" + Date.now()).then(r => r.json()).catch(() => []);
+  document.getElementById("cron").textContent = cfg.cron;
+  document.getElementById("total").textContent = runs.length;
+  document.getElementById("sched").textContent = runs.filter(r => r.trigger === "schedule").length;
+  document.getElementById("last").textContent = runs.length ? runs[runs.length - 1].time_ist : "none yet";
+  document.getElementById("rows").innerHTML = runs.slice().reverse().map(r =>
+    `<tr><td>${r.time_ist}</td>
+     <td class="${r.trigger === "schedule" ? "schedule" : ""}">${r.trigger}</td>
+     <td><a href="${r.run_url}" target="_blank">Run #${r.run_id}</a></td></tr>`).join("");
+})();
+</script>
+</body>
+</html>
